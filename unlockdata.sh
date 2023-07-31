@@ -1,32 +1,38 @@
 #!/bin/bash
 
-# Set permissions 770 and attribute -i (mutable) for a file or a folder (recursively).
-# Optionally, set the user and group (also recursively if on a folder).
+set -u -o pipefail
 
-set -eu -o pipefail
+# Initial script by ChatGPT, with modifications
 
-# The script must be used with at least one argument (the file or directory to be locked)
+# Check if argument is provided
 if [ $# -lt 1 ]
 then
   echo "Usage: unlockdata directory_or_file [user:group]"
   exit 1
 fi
 
-# First argument is the file or directory
+# Initialize tempdir
+if [ ! -d "~/.lockdata_script" ]; then
+          mkdir -p ~/.lockdata_script
+fi
+
+# Set argument as file or directory
 target=$1
 
 # Unset "i" attribute recursively
-chattr -R -i $target
+chattr -R -i $target 2> ~/.lockdata_script/chattr.txt
+grep -v "chattr: Operation not supported while reading flags on" ~/.lockdata_script/chattr.txt
 
-# Set owner:group if second argument is present
+# Set owner if second argument is present
 if [ $# -eq 2 ]
 then
   echo "Setting owner to $2 recursively..."
   chown -R $2 $target
 fi
 
-# Set permissions to 770
 echo "Setting 770 on $target..."
+
+# Set permissions to 770 recursively
 chmod -R 770 $target
 
 echo "Done. BE RESPONSIBLE!"
